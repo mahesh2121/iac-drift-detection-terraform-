@@ -133,33 +133,20 @@ resource "aws_s3_bucket_policy" "cloudtrail" {
   })
 }
 
-# S3 → SQS Event Notification
-resource "aws_s3_bucket_notification" "cloudtrail" {
-  bucket = aws_s3_bucket.cloudtrail.id
-
-  queue {
-    queue_arn     = aws_sqs_queue.processing.arn
-    events        = ["s3:ObjectCreated:*"]
-    filter_prefix = "AWSLogs/"
-    filter_suffix = ".json.gz"
-  }
-
-  depends_on = [aws_sqs_queue_policy.allow_s3]
-}
-
 # ═══════════════════════════════════════════════════
 # 3. CLOUDTRAIL (Single Account)
 # ═══════════════════════════════════════════════════
 
+# Single Account: CloudTrail Trail
 resource "aws_cloudtrail" "main" {
-  name                       = "${local.prefix}-trail"
-  s3_bucket_name             = aws_s3_bucket.cloudtrail.id
-  is_multi_region_trail      = true
-  enable_log_file_validation = true
-  kms_key_id                 = aws_kms_key.main.arn
+  name                          = "${local.prefix}-trail"
+  s3_bucket_name                = aws_s3_bucket.cloudtrail.id
+  is_multi_region_trail         = true
+  enable_log_file_validation    = true
+  kms_key_id                    = aws_kms_key.main.arn
   include_global_service_events = true
 
-  # NOT organization trail - single account
+  # Single account trail - not organization trail
   is_organization_trail = false
 
   event_selector {
@@ -173,47 +160,13 @@ resource "aws_cloudtrail" "main" {
 }
 
 # ═══════════════════════════════════════════════════
-# 4. SQS QUEUE
+# 4. SQS DEAD-LETTER QUEUE
 # ═══════════════════════════════════════════════════
-
-resource "aws_sqs_queue" "processing" {
-  name                       = "${local.prefix}-queue"
-  visibility_timeout_seconds = 900
-  message_retention_seconds  = 86400
-  receive_wait_time_seconds  = 20
-
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.dlq.arn
-    maxReceiveCount     = 3
-  })
-
-  tags = local.common_tags
-}
 
 resource "aws_sqs_queue" "dlq" {
   name                      = "${local.prefix}-dlq"
   message_retention_seconds = 604800 # 7 days
   tags                      = local.common_tags
-}
-
-# Allow S3 → SQS
-resource "aws_sqs_queue_policy" "allow_s3" {
-  queue_url = aws_sqs_queue.processing.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "s3.amazonaws.com" }
-      Action    = "sqs:SendMessage"
-      Resource  = aws_sqs_queue.processing.arn
-      Condition = {
-        ArnEquals = {
-          "aws:SourceArn" = aws_s3_bucket.cloudtrail.arn
-        }
-      }
-    }]
-  })
 }
 
 # ═══════════════════════════════════════════════════
@@ -242,7 +195,7 @@ resource "aws_dynamodb_table" "findings" {
   }
 
   global_secondary_index {
-    name            = "severity-index"
+    name = "severity-index"
     key_schema {
       attribute_name = "severity"
       key_type       = "HASH"
@@ -315,25 +268,18 @@ resource "aws_iam_role_policy" "lambda" {
         Resource = "arn:aws:logs:*:*:*"
       },
       {
-        Sid      = "S3Read"
-        Effect   = "Allow"
-        Action   = ["s3:GetObject"]
-        Resource = "${aws_s3_bucket.cloudtrail.arn}/*"
-      },
-      {
-        Sid    = "SQS"
+        Sid    = "S3Read"
         Effect = "Allow"
-        Action = [
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
+        Action = ["s3:GetObject", "s3:ListBucket"]
+        Resource = [
+          "arn:aws:s3:::${var.cloudtrail_bucket_name}",
+          "arn:aws:s3:::${var.cloudtrail_bucket_name}/*"
         ]
-        Resource = aws_sqs_queue.processing.arn
       },
       {
-        Sid    = "SQSDLQ"
-        Effect = "Allow"
-        Action = "sqs:SendMessage"
+        Sid      = "SQSDLQ"
+        Effect   = "Allow"
+        Action   = "sqs:SendMessage"
         Resource = aws_sqs_queue.dlq.arn
       },
       {

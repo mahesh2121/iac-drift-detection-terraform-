@@ -26,9 +26,12 @@ resource "aws_lambda_function" "detector" {
         "\"sns_topic_arn\":\"WILL_BE_SET\"",
         "\"sns_topic_arn\":\"${aws_sns_topic.alerts.arn}\""
       )
-      DYNAMODB_TABLE = aws_dynamodb_table.findings.name
-      SNS_TOPIC_ARN  = aws_sns_topic.alerts.arn
-      TTL_DAYS       = "90"
+      DYNAMODB_TABLE    = aws_dynamodb_table.findings.name
+      SNS_TOPIC_ARN     = aws_sns_topic.alerts.arn
+      TTL_DAYS          = "90"
+      CLOUDTRAIL_BUCKET = var.cloudtrail_bucket_name
+      CLOUDTRAIL_PREFIX = var.cloudtrail_logs_prefix
+      ACCOUNT_IDS       = join(",", var.cloudtrail_account_ids)
     }
   }
 
@@ -39,13 +42,26 @@ resource "aws_lambda_function" "detector" {
   tags = local.common_tags
 }
 
-# SQS → Lambda trigger
-resource "aws_lambda_event_source_mapping" "sqs" {
-  event_source_arn                   = aws_sqs_queue.processing.arn
-  function_name                      = aws_lambda_function.detector.arn
-  batch_size                         = 5
-  maximum_batching_window_in_seconds = 30
-  enabled                            = true
+# Daily reconciliation for the complete previous UTC calendar day.
+resource "aws_cloudwatch_event_rule" "yesterday_scan" {
+  name                = "${local.prefix}-yesterday-scan"
+  description         = "Scans the prior UTC day's CloudTrail logs"
+  schedule_expression = var.yesterday_scan_schedule_expression
+  tags                = local.common_tags
+}
+
+resource "aws_cloudwatch_event_target" "yesterday_scan" {
+  rule      = aws_cloudwatch_event_rule.yesterday_scan.name
+  target_id = "yesterday-cloudtrail-scan"
+  arn       = aws_lambda_function.detector.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_yesterday_scan" {
+  statement_id  = "AllowExecutionFromEventBridgeYesterdayScan"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.detector.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.yesterday_scan.arn
 }
 
 # Lambda log group

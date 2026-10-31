@@ -1,0 +1,187 @@
+# Terraform Files
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!example.tfvars
+.terraform/
+.terraform.lock.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Terraform Plan Files
+*.tfplan
+*.plan
+
+# Terraform Variable Files
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Terraform Apply Backup
+*.backup
+backup/
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+.vscode-server/
+
+# IDE Files
+*.code-workspace
+.env
+.env.local
+.env.*.local
+
+# Python Cache (Lambda)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Lambda Build
+lambda/.build/
+*.zip
+build/
+dist/
+
+# AWS CLI
+.aws/
+aws_credentials
+credentials
+
+# Logs
+*.log
+logs/
+*.out
+
+# Sensitive Files
+*.pem
+*.key
+*.pub
+*.ppk
+secrets/
+.secrets/
+credentials.json
+~/.aws/credentials
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Build Artifacts
+.build/
+.dist/
+artifacts/
+
+# Test Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Dependency Directories
+node_modules/
+vendor/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Git
+.gitkeep
+.git/
+
+# Documentation
+# Keep markdown files but ignore generated docs
+docs/generated/
+*.pdf
+
+# Configuration
+.env.production
+.env.staging
+
+# Miscellaneous
+.directory
+.trashinfo
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Thumbnail
+ehthumbs.db
+desktop.ini
+
+# State Backups
+*.state.backup
+state/
+
+# Local testing
+local/
+test-results/
+
+# Editor Backups
+*~
+*.swp
+*.swo
+.*.swp
+.*.swo
+
+# tfvars with secrets (CRITICAL - never commit!)
+terraform.tfvars
+*.tfvars
+!example.tfvars.example
+
+# Backup files
+.backup/
+backups/
+
+# CI/CD Local
+.github/workflows/local-*
+
+# CloudFormation
+*.yaml
+*.yml
+!*.example.yaml
+!*.example.yml

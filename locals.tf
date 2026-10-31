@@ -3,7 +3,7 @@ data "aws_region" "current" {}
 
 locals {
   account_id = data.aws_caller_identity.current.account_id
-  region     = data.aws_region.current.name
+  region     = data.aws_region.current.region
   prefix     = var.project_name
 
   common_tags = merge(var.tags, {
@@ -13,7 +13,7 @@ locals {
 
   # Lambda config passed as environment variable
   detector_config = jsonencode({
-    iac_user_agents = var.iac_user_agents
+    iac_user_agents   = var.iac_user_agents
     iac_role_patterns = var.iac_role_patterns
     iac_source_ips    = var.iac_source_ips
 
