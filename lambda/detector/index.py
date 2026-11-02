@@ -274,28 +274,28 @@ def send_teams_alert(finding):
         print(f"Teams error: {e}")
 
 
-def publish_metrics(findings):
-    if not findings:
-        return
-    now = datetime.now(timezone.utc)
-    metrics = [{
-        'MetricName': 'NonIaCChanges',
-        'Value': len(findings),
-        'Unit': 'Count',
-        'Timestamp': now,
-    }]
-    sev_counts = {}
-    for f in findings:
-        sev_counts[f['severity']] = sev_counts.get(f['severity'], 0) + 1
-    for sev, count in sev_counts.items():
-        metrics.append({
-            'MetricName': 'NonIaCChanges',
-            'Dimensions': [{'Name': 'Severity', 'Value': sev}],
-            'Value': count,
-            'Unit': 'Count',
-            'Timestamp': now,
-        })
-    cw.put_metric_data(Namespace='NonIaCDetector', MetricData=metrics)
+# def publish_metrics(findings):
+#     if not findings:
+#         return
+#     now = datetime.now(timezone.utc)
+#     metrics = [{
+#         'MetricName': 'NonIaCChanges',
+#         'Value': len(findings),
+#         'Unit': 'Count',
+#         'Timestamp': now,
+#     }]
+#     sev_counts = {}
+#     for f in findings:
+#         sev_counts[f['severity']] = sev_counts.get(f['severity'], 0) + 1
+#     for sev, count in sev_counts.items():
+#         metrics.append({
+#             'MetricName': 'NonIaCChanges',
+#             'Dimensions': [{'Name': 'Severity', 'Value': sev}],
+#             'Value': count,
+#             'Unit': 'Count',
+#             'Timestamp': now,
+#         })
+#     cw.put_metric_data(Namespace='NonIaCDetector', MetricData=metrics)
 
 
 # ═══════════════════════════════════════
